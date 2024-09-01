@@ -25,8 +25,8 @@ func (app *Config) Routes() http.Handler {
 	}))
 
 	mux.Use(middleware.Heartbeat("/ping"))
-	mux.Post("/", app.Broker)
-	mux.Post("/handle", app.HandleSubmission)
+	mux.Get("/", app.Broker)
+	mux.Post("/snippet-service/snippet", app.CreateSnippet)
 
 	return mux
 }
