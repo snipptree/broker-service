@@ -28,6 +28,13 @@ func (app *Config) Routes() http.Handler {
 	mux.Get("/", app.Broker)
 
 	//Snippet Service
+	mux.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		payload := jsonResponse{
+			Error:   false,
+			Message: "healthy",
+		}
+		app.writeJSON(w, http.StatusOK, payload)
+	})
 	mux.Post("/snippet-service/snippet", app.CreateSnippet)
 	mux.Get("/snippet-service/search", app.SearchSnippet)
 

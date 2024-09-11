@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: broker-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: broker-service
@@ -14,18 +14,26 @@ spec:
     spec:
       containers:
       - name: broker-service
-        image: 727646499255.dkr.ecr.ap-south-1.amazonaws.com/snipptree/broker-service:latest
+        image: 727646499255.dkr.ecr.ap-south-1.amazonaws.com/broker-service:latest
+        resources:
+          requests: 
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
         ports:
-        - containerPort: 8080
+        - containerPort: 80  # Broker service runs on port 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: broker-service
 spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8080
+  type: LoadBalancer  # This exposes the broker service externally
   selector:
     app: broker-service
+  ports:
+    - protocol: TCP
+      port: 80  # External LoadBalancer Port
+      targetPort: 80  # Port that the pod listens on
