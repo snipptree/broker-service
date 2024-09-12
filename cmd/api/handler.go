@@ -54,7 +54,7 @@ func (app *Config) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "" {
 		log.Println("Missing Content-Type header")
-		http.Error(w, "Content-Type header missing", http.StatusBadRequest)
+		app.errorJSON(w, errors.New("content-type header missing"), http.StatusBadRequest)
 		return
 	}
 	log.Println("Original Content-Type:", contentType)
@@ -87,8 +87,8 @@ func (app *Config) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(response.Body)
-		log.Printf("Error response from snippet-service: %s", string(bodyBytes))
-		http.Error(w, string(bodyBytes), response.StatusCode)
+		log.Printf("error response from snippet-service: %s", string(bodyBytes))
+		app.errorJSON(w, errors.New("error response from snippet-service"), response.StatusCode)
 		return
 	}
 
