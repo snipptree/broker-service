@@ -24,10 +24,9 @@ func (app *Config) Routes() http.Handler {
 		MaxAge:           300,
 	}))
 
+	//broker-service
 	mux.Use(middleware.Heartbeat("/ping"))
 	mux.Get("/", app.Broker)
-
-	//Snippet Service
 	mux.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		payload := jsonResponse{
 			Error:   false,
@@ -35,6 +34,11 @@ func (app *Config) Routes() http.Handler {
 		}
 		app.writeJSON(w, http.StatusOK, payload)
 	})
+
+	//authentication service
+	mux.Post("/auth-service/authenticate", app.Authenticate)
+
+	//Snippet Service
 	mux.Post("/snippet-service/snippet", app.CreateSnippet)
 	mux.Get("/snippet-service/search", app.SearchSnippet)
 

@@ -44,6 +44,61 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 	_ = app.writeJSON(w, http.StatusOK, payload)
 }
 
+func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
+	log.Println("Starting Authenticate handler...")
+	// Log the incoming request details
+	log.Println("Incoming request: ", r.Method, r.URL.Path)
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" {
+		log.Println("Missing Content-Type header")
+		app.errorJSON(w, errors.New("content-type header missing"), http.StatusBadRequest)
+		return
+	}
+
+	reqURL := "http://authentication-service/authenticate"
+
+	// Call the snippet microservice
+	request, err := http.NewRequest(http.MethodPost, reqURL, r.Body)
+	if err != nil {
+		log.Printf("error creating request: %v", err)
+		app.errorJSON(w, err)
+		return
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		log.Printf("error sending request: %v", err)
+		app.errorJSON(w, err)
+		return
+	}
+	defer response.Body.Close()
+
+	// Handle the response
+	var jsonFromService jsonResponse
+	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
+	if err != nil {
+		log.Printf("error decoding response: %v", err)
+		app.errorJSON(w, err)
+		return
+	}
+
+	// Check for an error response from the microservice
+	if jsonFromService.Error {
+		log.Printf("error response: %v", err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	// Send back the response
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = jsonFromService.Message
+	payload.Data = jsonFromService.Data
+
+	app.writeJSON(w, http.StatusOK, payload)
+}
+
 func (app *Config) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting CreateSnippet handler...")
 
