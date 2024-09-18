@@ -4,7 +4,6 @@ import (
 	"broker-service/event"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -87,15 +86,25 @@ func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 
 // ForwardRequest forwards the request to the appropriate microservice
 func (app *Config) ForwardRequest(w http.ResponseWriter, r *http.Request, serviceURL string, method string) {
-	// Create a new request with the same body as the original request
-	var bodyBytes []byte
-	if r.Body != nil {
-		bodyBytes, _ = io.ReadAll(r.Body)
-	}
-	defer r.Body.Close()
+	// Log the forwarded service URL
+	log.Printf("Forwarding request to %s with method %s", serviceURL, method)
 
-	req, err := http.NewRequest(method, serviceURL, bytes.NewBuffer(bodyBytes))
+	// Read the body into a buffer
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
+		log.Println("error reading request body:", err)
+		app.errorJSON(w, err)
+		return
+	}
+	defer r.Body.Close() // Always close the request body
+
+	// Log request body for debugging
+	log.Printf("Request body: %s", string(bodyBytes))
+
+	// Create a new request with the same body as the original request
+	req, err := http.NewRequest(method, serviceURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		log.Println("error creating new request:", err)
 		app.errorJSON(w, err)
 		return
 	}
@@ -107,29 +116,32 @@ func (app *Config) ForwardRequest(w http.ResponseWriter, r *http.Request, servic
 		}
 	}
 
+	// Log headers for debugging
+	log.Println("Forwarding headers:")
+	for key, values := range req.Header {
+		log.Printf("%s: %s", key, values)
+	}
+
 	// Send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Println("error forwarding request to microservice:", err)
 		app.errorJSON(w, err)
 		return
 	}
 	defer resp.Body.Close()
 
+	// Log the response status
+	log.Printf("Response status: %d", resp.StatusCode)
+
 	// Forward the response from the microservice back to the client
-	var jsonResponse jsonResponse
-	err = json.NewDecoder(resp.Body).Decode(&jsonResponse)
+	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	w.WriteHeader(resp.StatusCode)
+	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		app.errorJSON(w, err)
-		return
+		log.Println("error forwarding response body:", err)
 	}
-
-	if jsonResponse.Error {
-		app.errorJSON(w, errors.New(jsonResponse.Message), resp.StatusCode)
-		return
-	}
-
-	app.writeJSON(w, resp.StatusCode, jsonResponse)
 }
 
 func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
