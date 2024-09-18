@@ -1,6 +1,7 @@
 package main
 
 import (
+	"broker-service/event"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -68,13 +69,19 @@ func (app *Config) SearchSnippet(w http.ResponseWriter, r *http.Request) {
 
 func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 	// Forward to the log service
-	url := "http://logger-service/log"
-	app.ForwardRequest(w, r, http.MethodPost, url)
+	var log LogPayload
+	err := app.readJSON(w, r, &log)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	app.logEventViaRabbit(w, log)
 }
 
 func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 	// Forward to the mail service
-	url := "http://comm-service/send"
+	url := "http://listener-service/send"
 	app.ForwardRequest(w, r, http.MethodPost, url)
 }
 
@@ -123,4 +130,38 @@ func (app *Config) ForwardRequest(w http.ResponseWriter, r *http.Request, servic
 	}
 
 	app.writeJSON(w, resp.StatusCode, jsonResponse)
+}
+
+func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
+	err := app.pushToQueue(l.Name, l.Data)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "logged via RabbitMQ"
+
+	app.writeJSON(w, http.StatusOK, payload)
+}
+
+func (app *Config) pushToQueue(name, msg string) error {
+	emitter, err := event.NewEventEmitter(app.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	payload := LogPayload{
+		Name: name,
+		Data: msg,
+	}
+
+	j, _ := json.Marshal(&payload)
+
+	err = emitter.Push(string(j), "log.INFO")
+	if err != nil {
+		return err
+	}
+	return nil
 }

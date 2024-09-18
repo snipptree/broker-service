@@ -48,5 +48,7 @@ func (app *Config) Routes() http.Handler {
 	//Communication Service
 	mux.Post("/comm-service/mail", app.SendMail)
 
+	mux.Post("/logger-service/log", app.LogItem)
+
 	return mux
 }
