@@ -41,6 +41,7 @@ func (app *Config) Routes() http.Handler {
 	//Snippet Service
 	mux.Post("/snippet-service/snippet", app.CreateSnippet)
 	mux.Get("/snippet-service/search", app.SearchSnippet)
+	mux.Get("/snippet-service/user/snippets", app.GetUserSnippets)
 
 	//Logger Service
 	mux.Post("/logger-service/log", app.LogItem)

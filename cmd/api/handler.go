@@ -66,6 +66,13 @@ func (app *Config) SearchSnippet(w http.ResponseWriter, r *http.Request) {
 	app.ForwardRequest(w, r, reqURL, http.MethodGet)
 }
 
+func (app *Config) GetUserSnippets(w http.ResponseWriter, r *http.Request) {
+	reqURL := "http://snippet-service/user/snippets"
+
+	log.Println("forwarding request to snippet-service get user snippets...")
+	app.ForwardRequest(w, r, reqURL, http.MethodGet)
+}
+
 func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 	// Forward to the log service
 	var log LogPayload
