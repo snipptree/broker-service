@@ -47,7 +47,7 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	log.Println("Starting Authenticate handler...")
 	log.Println("Incoming request: ", r.Method, r.URL.Path)
 	log.Println("Forwarding request to authentication-service...")
-	app.ForwardRequest(w, r, "http://authentication-service/authenticate", http.MethodPost)
+	app.ForwardRequest(w, r, "http://localhost:8081/authenticate", http.MethodPost)
 }
 
 func (app *Config) CreateSnippet(w http.ResponseWriter, r *http.Request) {
@@ -55,19 +55,19 @@ func (app *Config) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	// Log the incoming request details
 	log.Println("Incoming request: ", r.Method, r.URL.Path)
 	log.Println("Forwarding request to snippet-service...")
-	app.ForwardRequest(w, r, "http://snippet-service/snippet", http.MethodPost)
+	app.ForwardRequest(w, r, "http://localhost:8082/snippet", http.MethodPost)
 }
 
 func (app *Config) SearchSnippet(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("query")
-	reqURL := "http://snippet-service/search?query=" + url.QueryEscape(query)
+	reqURL := "http://localhost:8082/search?query=" + url.QueryEscape(query)
 
 	log.Println("Forwarding request to snippet-service search...")
 	app.ForwardRequest(w, r, reqURL, http.MethodGet)
 }
 
 func (app *Config) GetUserSnippets(w http.ResponseWriter, r *http.Request) {
-	reqURL := "http://snippet-service/user/snippets"
+	reqURL := "http://localhost:8082/user/snippets"
 
 	log.Println("forwarding request to snippet-service get user snippets...")
 	app.ForwardRequest(w, r, reqURL, http.MethodGet)
@@ -87,7 +87,7 @@ func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 
 func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 	// Forward to the mail service
-	url := "http://listener-service/send"
+	url := "http://localhost:8085/send"
 	app.ForwardRequest(w, r, http.MethodPost, url)
 }
 
