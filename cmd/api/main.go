@@ -5,29 +5,28 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const webPort = "80"
+const webPort = "8080"
 
 type Config struct {
-	Rabbit *amqp.Connection
+	// Rabbit *amqp.Connection
 }
 
 func main() {
 	// try to connect to rabbitMq
-	rabbitConn, err := connect()
-	if err != nil {
-		log.Printf("error connecting to rabbitmq: %v", err)
-		os.Exit(1)
-	}
-	defer rabbitConn.Close()
-
+	// 	rabbitConn, err := connect()
+	// 	if err != nil {
+	// 		log.Printf("error connecting to rabbitmq: %v", err)
+	// 		os.Exit(1)
+	// 	}
+	// 	defer rabbitConn.Close()
+	//
 	app := Config{
-		Rabbit: rabbitConn,
+		// Rabbit: rabbitConn,
 	}
 
 	log.Printf("Starting broker service on PORT %s", webPort)
@@ -37,7 +36,7 @@ func main() {
 		Handler: app.Routes(),
 	}
 
-	err = srv.ListenAndServe()
+	err := srv.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}

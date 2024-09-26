@@ -1,9 +1,7 @@
 package main
 
 import (
-	"broker-service/event"
 	"bytes"
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -82,7 +80,7 @@ func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.logEventViaRabbit(w, log)
+	// app.logEventViaRabbit(w, log)
 }
 
 func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
@@ -151,36 +149,36 @@ func (app *Config) ForwardRequest(w http.ResponseWriter, r *http.Request, servic
 	}
 }
 
-func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
-	err := app.pushToQueue(l.Name, l.Data)
-	if err != nil {
-		app.errorJSON(w, err)
-		return
-	}
+// func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
+// 	err := app.pushToQueue(l.Name, l.Data)
+// 	if err != nil {
+// 		app.errorJSON(w, err)
+// 		return
+// 	}
 
-	var payload jsonResponse
-	payload.Error = false
-	payload.Message = "logged via RabbitMQ"
+// 	var payload jsonResponse
+// 	payload.Error = false
+// 	payload.Message = "logged via RabbitMQ"
 
-	app.writeJSON(w, http.StatusOK, payload)
-}
+// 	app.writeJSON(w, http.StatusOK, payload)
+// }
 
-func (app *Config) pushToQueue(name, msg string) error {
-	emitter, err := event.NewEventEmitter(app.Rabbit)
-	if err != nil {
-		return err
-	}
+// func (app *Config) pushToQueue(name, msg string) error {
+// 	emitter, err := event.NewEventEmitter(app.Rabbit)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	payload := LogPayload{
-		Name: name,
-		Data: msg,
-	}
+// 	payload := LogPayload{
+// 		Name: name,
+// 		Data: msg,
+// 	}
 
-	j, _ := json.Marshal(&payload)
+// 	j, _ := json.Marshal(&payload)
 
-	err = emitter.Push(string(j), "log.INFO")
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// 	err = emitter.Push(string(j), "log.INFO")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
