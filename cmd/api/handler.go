@@ -87,8 +87,8 @@ func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 
 func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 	// Forward to the mail service
-	url := "http://listener-service/send"
-	app.ForwardRequest(w, r, http.MethodPost, url)
+	url := "http://comm-service/send"
+	app.ForwardRequest(w, r, url, http.MethodPost)
 }
 
 // ForwardRequest forwards the request to the appropriate microservice
