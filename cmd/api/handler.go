@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type RequestPayload struct {
@@ -56,6 +59,17 @@ func (app *Config) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	app.ForwardRequest(w, r, "http://snippet-service/snippet", http.MethodPost)
 }
 
+func (app *Config) GetSnippetById(w http.ResponseWriter, r *http.Request) {
+	log.Println("Starting GetSnippetById handler...")
+	// Log the incoming request details
+	log.Println("Incoming request: ", r.Method, r.URL.Path)
+	log.Println("Forwarding request to snippet-service...")
+
+	snippetID := chi.URLParam(r, "id")
+	log.Println(snippetID)
+	app.ForwardRequest(w, r, "http://snippet-service/snippet/"+snippetID, http.MethodGet)
+}
+
 func (app *Config) SearchSnippet(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("query")
 	reqURL := "http://snippet-service/search?query=" + url.QueryEscape(query)
@@ -91,28 +105,28 @@ func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 
 // ForwardRequest forwards the request to the appropriate microservice
 func (app *Config) ForwardRequest(w http.ResponseWriter, r *http.Request, serviceURL string, method string) {
-	// Log the forwarded service URL
 	log.Printf("Forwarding request to %s with method %s", serviceURL, method)
 
-	// Read the body into a buffer
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println("error reading request body:", err)
-		app.errorJSON(w, err)
-		return
+	// Only read the body for methods that require it
+	var bodyBytes []byte
+	var err error
+	if method != http.MethodGet {
+		bodyBytes, err = io.ReadAll(r.Body)
+		if err != nil {
+			log.Println("error reading request body:", err)
+			app.errorJSON(w, err)
+			return
+		}
+		defer r.Body.Close()
 	}
-	defer r.Body.Close() // Always close the request body
 
-	// Log request body for debugging
-	log.Printf("Request body: %s", string(bodyBytes))
-
-	// Create a new request with the same body as the original request
 	req, err := http.NewRequest(method, serviceURL, bytes.NewReader(bodyBytes))
 	if err != nil {
 		log.Println("error creating new request:", err)
 		app.errorJSON(w, err)
 		return
 	}
+	req.Close = true
 
 	// Forward headers from the original request to the microservice
 	for key, values := range r.Header {
@@ -121,26 +135,23 @@ func (app *Config) ForwardRequest(w http.ResponseWriter, r *http.Request, servic
 		}
 	}
 
-	// Log headers for debugging
-	log.Println("Forwarding headers:")
-	for key, values := range req.Header {
-		log.Printf("%s: %s", key, values)
+	client := &http.Client{
+		Timeout: 30 * time.Second, // Set a longer timeout if needed
 	}
 
-	// Send the request
-	client := &http.Client{}
+	log.Println("req")
+	log.Println(req)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("error forwarding request to microservice:", err)
+		log.Printf("Error forwarding request: %v", err)
 		app.errorJSON(w, err)
 		return
 	}
 	defer resp.Body.Close()
 
 	// Log the response status
-	log.Printf("Response status: %d", resp.StatusCode)
+	log.Printf("Received response status: %d", resp.StatusCode)
 
-	// Forward the response from the microservice back to the client
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(w, resp.Body)

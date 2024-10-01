@@ -39,6 +39,7 @@ func (app *Config) Routes() http.Handler {
 	mux.Post("/auth-service/authenticate", app.Authenticate)
 
 	//Snippet Service
+	mux.Get("/snippet-service/snippet/{id}", app.GetSnippetById)
 	mux.Post("/snippet-service/snippet", app.CreateSnippet)
 	mux.Get("/snippet-service/search", app.SearchSnippet)
 	mux.Get("/snippet-service/user/snippets", app.GetUserSnippets)
