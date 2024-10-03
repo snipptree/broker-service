@@ -85,6 +85,22 @@ func (app *Config) GetUserSnippets(w http.ResponseWriter, r *http.Request) {
 	app.ForwardRequest(w, r, reqURL, http.MethodGet)
 }
 
+func (app *Config) LikeSnippet(w http.ResponseWriter, r *http.Request) {
+	snippetID := chi.URLParam(r, "id")
+	reqURL := "http://snippet-service/snippet/" + snippetID + "/like"
+
+	log.Println("forwarding request to snippet-service like snippet...")
+	app.ForwardRequest(w, r, reqURL, http.MethodPost)
+}
+
+func (app *Config) UnlikeSnippet(w http.ResponseWriter, r *http.Request) {
+	snippetID := chi.URLParam(r, "id")
+	reqURL := "http://snippet-service/snippet/" + snippetID + "/unlike"
+
+	log.Println("forwarding request to snippet-service unlike snippet...")
+	app.ForwardRequest(w, r, reqURL, http.MethodDelete)
+}
+
 func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 	// Forward to the log service
 	var log LogPayload
