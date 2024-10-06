@@ -101,6 +101,14 @@ func (app *Config) UnlikeSnippet(w http.ResponseWriter, r *http.Request) {
 	app.ForwardRequest(w, r, reqURL, http.MethodDelete)
 }
 
+func (app *Config) DeleteSnippet(w http.ResponseWriter, r *http.Request) {
+	snippetID := chi.URLParam(r, "id")
+	reqURL := "http://snippet-service/snippet/" + snippetID
+
+	log.Println("forwarding request to snippet-service delete snippet...")
+	app.ForwardRequest(w, r, reqURL, http.MethodDelete)
+}
+
 func (app *Config) LogItem(w http.ResponseWriter, r *http.Request) {
 	// Forward to the log service
 	var log LogPayload
